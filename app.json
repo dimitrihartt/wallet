@@ -3,13 +3,12 @@
     "name": "wallet",
     "slug": "wallet",
     "version": "1.0.0",
-
     "scheme": "wallet",
     "web": {
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/favicon.png"
-    },
+    },    
     "plugins": [
       "expo-router",
       [
@@ -17,32 +16,49 @@
         {
           "launchMode": "most-recent"
         }
-      ]
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share them with your friends."
+        }
+      ]      
     ],
     "experiments": {
       "typedRoutes": true,
-
       "tsconfigPaths": true
     },
-
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-
     "userInterfaceStyle": "light",
-
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.dimitrihartt.wallet",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
+      },
+      "package": "com.dimitrihartt.wallet"
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "e17a7d1f-69bb-4f1c-8fb6-6753b4157609"
       }
     }
   }
