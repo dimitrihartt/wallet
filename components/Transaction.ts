@@ -1,7 +1,5 @@
-import * as crypto from 'crypto';
-
-import { ec as EC } from 'elliptic';
-const ec = new EC('secp256k1');
+import * as Crypto from 'expo-crypto';
+import * as secp from '@noble/secp256k1';
 
 export class Transaction {
   fromAddress: string | null;
@@ -17,34 +15,50 @@ export class Transaction {
     this.timestamp = Date.now();
   }
 
-  calculateHash(): string {
-    return crypto
-      .createHash('sha256')
-      .update(this.fromAddress + this.toAddress + this.amount + this.timestamp)
-      .digest('hex');
+  /**
+   * Computes the SHA256 hash of the transaction data.
+   */
+  async calculateHash(): Promise<string> {
+    const data = `${this.fromAddress}${this.toAddress}${this.amount}${this.timestamp}`;
+    return await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, data);
   }
 
-  signTransaction(signingKey: EC.KeyPair): void {
-    if (signingKey.getPublic('hex') !== this.fromAddress) {
+  /**
+   * Signs the transaction with the given private key.
+   * The method checks that the public key derived from the provided
+   * private key matches the fromAddress.
+   *
+   * @param privateKey - The signing private key as a hex string.
+   */
+  async signTransaction(privateKey: string): Promise<void> {
+    // Ensure the public key derived from the private key matches the fromAddress.
+    // Here, we use compressed format (pass `true`).
+    if (Buffer.from(secp.getPublicKey(privateKey, true)).toString('hex') !== this.fromAddress) {
       throw new Error('You cannot sign transactions for other wallets!');
     }
 
-    const hashTx = this.calculateHash();
-    const sig = signingKey.sign(hashTx, 'base64');
-
-    this.signature = sig.toDER('hex');
+    const hashTx = await this.calculateHash();
+    const signature = await secp.sign(hashTx, privateKey);
+    this.signature = signature.toCompactHex();
   }
 
-  isValid(): boolean {
+  /**
+   * Verifies the signature of this transaction.
+   * Uses the fromAddress (assumed to be the compressed public key) to verify.
+   *
+   * @returns a Promise that resolves to true if the transaction is valid.
+   */
+  async isValid(): Promise<boolean> {
+    // If fromAddress is null, we assume it's a mining reward.
     if (this.fromAddress === null) {
-      return true; // Mining reward
+      return true;
     }
 
     if (!this.signature || this.signature.length === 0) {
       throw new Error('No signature in this transaction');
     }
 
-    const publicKey = ec.keyFromPublic(this.fromAddress, 'hex');
-    return publicKey.verify(this.calculateHash(), this.signature);
+    const hashTx = await this.calculateHash();
+    return await secp.verify(this.signature, hashTx, this.fromAddress);
   }
 }
