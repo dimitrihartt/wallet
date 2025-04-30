@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { View, Text, TextInput, Button, ScrollView } from 'react-native';
 import { Transaction } from './Transaction';
 
+import * as SecureStore from 'expo-secure-store';
+import CryptoJS from 'crypto-js';
+
 import * as Crypto from 'expo-crypto';
 import * as secp from '@noble/secp256k1';
 import { keccak_256 } from '@noble/hashes/sha3';
@@ -10,14 +13,29 @@ import { hexToBytes, bytesToHex } from '@noble/hashes/utils';
 import QRCode from 'react-native-qrcode-svg';
 
 // const ec = new EC('secp256k1');
+async function save(key: string, value: string) {
+  await SecureStore.setItemAsync(key, value);
+}
+
+async function encryptAndSavePrivateKey(privateKey: string, password: string) {
+  const key = CryptoJS.SHA256(password).toString();
+  const encrypted = CryptoJS.AES.encrypt(privateKey, key).toString();
+  await SecureStore.setItemAsync('encryptedPrivateKey', encrypted);
+  console.log('🔐 Private key encrypted and saved! 🔐', encrypted);
+}
 
 export function Wallet({ blockchain }: { blockchain: any }) {
   const [UUID, setUUID] = useState('');
-  const [privateKey, setPrivateKey] = useState('');
+
+  const [password, setPassword] = useState('');
+  const [privateKey, setPrivateKey] = useState('');  
+
   const [publicKey, setPublicKey] = useState('');
   const [publicKeyCompressed, setPublicKeyCompressed] = useState('');
+
   const [myAddress, setMyAddress] = useState('');
   const [recipientAddress, setRecipientAddress] = useState('');
+
   const [amount, setAmount] = useState('');
   const [balance, setBalance] = useState(0);
 
@@ -36,31 +54,29 @@ export function Wallet({ blockchain }: { blockchain: any }) {
     }
 
     // Convert the byte array to a hex string (optional, only for logging)
-    const randomHex = Buffer.from(randomBytes).toString('hex');
-
+    const privateKeyHex = Buffer.from(randomBytes).toString('hex');
+    // Encrypt the private key using the password
+    console.log(encryptAndSavePrivateKey(privateKeyHex, password));
+    
     // Use the randomBytes directly as the private key
-    const publicKeyCompressed = secp.getPublicKey(randomBytes, true); // compressed format
+    const publicKeyCompressed = secp.getPublicKey(randomBytes, true); // compressed format    
     const publicKeyUncompressed = secp.getPublicKey(randomBytes, false); // uncompressed format
 
     // Create the hash of the random data
-    // const hash = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, randomHex);
+    // const hash = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, privateKeyHex);
 
     // Creating the address from the public key
     // 1. Remove the first byte (0x04) from the uncompressed public key
     const pubKeyWithoutPrefix = publicKeyUncompressed.slice(1); // 64 bytes
-
     // 2. Keccak256 hash of the public key
     const addressHash = keccak_256(pubKeyWithoutPrefix);
-
     // 3. Take the last 20 bytes
     const addressBytes = addressHash.slice(-20);
-
     // 4. Convert to hex and prefix with "0x"
     const cryptoAddress = '0x' + bytesToHex(addressBytes);
-    console.log('Address:', cryptoAddress);
 
     setUUID(UUID);
-    setPrivateKey(randomHex);
+    setPrivateKey(privateKeyHex);
     setPublicKey(Buffer.from(publicKeyUncompressed).toString('hex'));
     setPublicKeyCompressed(Buffer.from(publicKeyCompressed).toString('hex'));
     setMyAddress(cryptoAddress);
@@ -93,63 +109,84 @@ export function Wallet({ blockchain }: { blockchain: any }) {
   };
 
   return (
-    <View className="mb-2 rounded-md bg-white p-4 shadow-md"> 
-    <Text className="mb-4 text-center text-2xl font-bold">Wallet</Text>
-  
-    <Button title="Generate Wallet" onPress={generateWallet} />
-  
-    {publicKey ? (
-      <>
-        <View className="my-4 w-full items-center">
-          {/* QR code box */}
-          <View className="h-40 w-40 items-center justify-center rounded-md border border-gray-300 bg-white p-4">
-            <QRCode value={myAddress} />
+    <View className="mb-2 rounded-md bg-white p-4 shadow-md">
+      <Text className="mb-4 text-center text-2xl font-bold">Wallet</Text>
+
+      <View className="mt-4 space-y-2">
+        <TextInput
+          className="mb-2 rounded-md border border-gray-300 bg-white p-2"
+          placeholder="Enter a password to secure your wallet"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
+        <Button title="Generate Wallet" onPress={generateWallet} />
+      </View>
+
+      {publicKey ? (
+        <>
+          <View className="my-4 w-full items-center">
+            {/* QR code box */}
+            <View className="h-40 w-40 items-center justify-center rounded-md border border-gray-300 bg-white p-4">
+              <QRCode value={myAddress} />
+            </View>
+            <Text className="mt-2 text-xs italic text-gray-500">Scan to send funds</Text>
           </View>
-          <Text className="mt-2 text-xs italic text-gray-500">Scan to send funds</Text>
-        </View>
-          
-        <Text className="font-bold">My Crypto Address:</Text>
-        <Text selectable className="mb-2 text-xs">{myAddress}</Text>
-  
-        <Text className="mt-4 font-bold">UUID:</Text>
-        <Text selectable className="mb-2 text-xs">{UUID}</Text>
-  
-        <Text className="mt-4 font-bold">Public Key:</Text>
-        <Text selectable className="mb-2 text-xs">{publicKey}</Text>
-  
-        <Text className="mt-4 font-bold">Public Key Compressed:</Text>
-        <Text selectable className="mb-2 text-xs">{publicKeyCompressed}</Text>
-  
-        <Text className="font-bold">Private Key:</Text>
-        <Text selectable className="mb-2 text-xs">{privateKey}</Text>
-  
-        <Text className="mt-2 font-bold">Balance: {balance}</Text>
-  
-        <Button title="Refresh Balance" onPress={refreshBalance} />
-  
-        <View className="mt-4 space-y-2">
-          <TextInput
-            className="rounded-md border border-gray-300 bg-white p-2"
-            placeholder="Recipient Address"
-            value={myAddress}
-            onChangeText={setRecipientAddress}
-          />
-          <TextInput
-            className="rounded-md border border-gray-300 bg-white p-2"
-            placeholder="Amount"
-            value={amount}
-            onChangeText={setAmount}
-            keyboardType="numeric"
-          />
-          <Button title="Send Transaction" onPress={sendTransaction} />
-        </View>
-      </>
-    ) : (
-      <Text className="mt-4 text-center italic text-gray-500">
-        Create or load a wallet to begin.
-      </Text>
-    )}
-  </View>
-  
+
+          <Text className="font-bold">My Crypto Address:</Text>
+          <Text selectable className="mb-2 text-xs">
+            {myAddress}
+          </Text>
+
+          <Text className="mt-4 font-bold">UUID:</Text>
+          <Text selectable className="mb-2 text-xs">
+            {UUID}
+          </Text>
+
+          <Text className="mt-4 font-bold">Public Key:</Text>
+          <Text selectable className="mb-2 text-xs">
+            {publicKey}
+          </Text>
+
+          <Text className="mt-4 font-bold">Public Key Compressed:</Text>
+          <Text selectable className="mb-2 text-xs">
+            {publicKeyCompressed}
+          </Text>
+
+          <Text className="font-bold">Password:</Text>
+          <Text selectable className="mb-2 text-xs">
+            {password}
+          </Text>
+
+          <Text className="font-bold">Private Key:</Text>
+          <Text selectable className="mb-2 text-xs">
+            {privateKey}
+          </Text>
+
+          <Text className="mt-2 font-bold">Balance: {balance}</Text>
+
+          <Button title="Refresh Balance" onPress={refreshBalance} />
+
+          <View className="mt-4 space-y-2">
+            <TextInput
+              className="rounded-md border border-gray-300 bg-white p-2"
+              placeholder="Recipient Address"
+              value={myAddress}
+              onChangeText={setRecipientAddress}
+            />
+            <TextInput
+              className="rounded-md border border-gray-300 bg-white p-2"
+              placeholder="Amount"
+              value={amount}
+              onChangeText={setAmount}
+              keyboardType="numeric"
+            />
+            <Button title="Send Transaction" onPress={sendTransaction} />
+          </View>
+        </>
+      ) : (
+        <Text className="mt-4 text-center italic text-gray-500">Create a wallet to begin.</Text>
+      )}
+    </View>
   );
 }
