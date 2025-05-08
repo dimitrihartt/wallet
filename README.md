@@ -1,3 +1,8 @@
+User has access to the private key with the bip39.
+User can see the balance with the Private key + UniqueID
+User can send transaction with the PK and UID
+
+
 Steps to Implement MFA with Android Unique ID + Passphrase
 Retrieve Android Unique ID as the first authentication factor.
 

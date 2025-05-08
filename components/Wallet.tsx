@@ -42,6 +42,7 @@ export function Wallet({ blockchain }: { blockchain: any }) {
   const [uniqueId, setUniqueId] = useState<string | null>(null);
 
   const [password, setPassword] = useState('');  
+  const [privateKeyI, setPrivateKeyI] = useState('');
   const [privateKey, setPrivateKey] = useState('');
   const [publicKey, setPublicKey] = useState('');
   const [isEncryptedPrivateKeyStored, setIsEncryptedPrivateKeyStored] = useState(false);  
@@ -58,7 +59,6 @@ export function Wallet({ blockchain }: { blockchain: any }) {
     }
   }, []);
 
-
   const generateWallet = async () => {    
     const UUID = Crypto.randomUUID(); // Generate a random UUID
 
@@ -66,24 +66,45 @@ export function Wallet({ blockchain }: { blockchain: any }) {
     const randomBytes = new Uint8Array(32); // Generate a random 256-bit number
     await Crypto.getRandomValues(randomBytes); // Use the Expo Crypto to generate random bytes
     const privateKeyHex = Buffer.from(randomBytes).toString('hex'); // Convert the byte array to a hex string (optional, only for logging)
+    setPrivateKeyI(privateKeyHex);
+    
     const key = CryptoJS.SHA256(password).toString(); // Hash the password to create a key for encryption
     const encrypted = CryptoJS.AES.encrypt(privateKeyHex, key).toString(); // Encrypt the private key using the password
     await SecureStore.setItemAsync('encryptedPrivateKey', encrypted); // Store the encrypted private key in secure storage
     setIsEncryptedPrivateKeyStored(true); // Update the state to indicate that the private key is stored
     console.log('🔐 Private key created, encrypted and saved! 🔐', encrypted);
+    
     const publicKeyCompressed = secp.getPublicKey(randomBytes, true); // Use the randomBytes directly as the private key to create the public compressed format key
     const publicKeyUncompressed = secp.getPublicKey(randomBytes, false); // Uncompressed format
+    
     const pubKeyWithoutPrefix = publicKeyUncompressed.slice(1); // 1. Remove the first byte (0x04) from the uncompressed public key (64 bytes)
     const addressHash = keccak_256(pubKeyWithoutPrefix); // 2. Keccak256 hash of the public key
     const addressBytes = addressHash.slice(-20); // 3. Take the last 20 bytes
-    const cryptoAddress = '0x' + bytesToHex(addressBytes); // 4. Convert to hex and prefix with "0x"
+    const cryptoAddress = '0x' + bytesToHex(addressBytes); // 4. Convert to hex and prefix with "0x"    
     // setPublicKey(Buffer.from(publicKeyUncompressed).toString('hex'));
     // setPublicKeyCompressed(Buffer.from(publicKeyCompressed).toString('hex'));
     setMyAddress(cryptoAddress);
     console.log('🔐 Address created! 🔐', cryptoAddress);
+
     //const newBalance = blockchain.getBalanceOfAddress(publicKeyGenerated);
     //setBalance(newBalance);
   };
+
+const decryptPrivateKey = async () => {
+  const encryptedPrivateKey =  await SecureStore.getItemAsync('encryptedPrivateKey'); // Restore the encrypted private key from secure storage
+  const key = CryptoJS.SHA256(password).toString(); // Derive AES key from password
+  if (!encryptedPrivateKey) {
+    throw new Error('❌ Encrypted private key not found.');
+  }
+  const decrypted = CryptoJS.AES.decrypt(encryptedPrivateKey, key); // Decrypt AES
+  const privateKeyHex = decrypted.toString(CryptoJS.enc.Utf8); // Decode to UTF-8
+  if (!privateKeyHex) {
+    throw new Error('❌ Decryption failed. Possibly wrong password or corrupted data.');
+  }
+  setPrivateKey(privateKeyHex);
+  return privateKeyHex;
+}
+
 
   const sendTransaction = () => {
     if (!privateKey || !publicKey || !recipientAddress || !amount) {
@@ -129,6 +150,22 @@ export function Wallet({ blockchain }: { blockchain: any }) {
 
           <Text className="mt-2 font-bold">Balance: {balance}</Text>
           <Text className="mt-2 font-bold">UniqueID: {uniqueId}</Text>
+          <Text className="mt-2 font-bold">PrivateKey: {privateKeyI}</Text>
+          <Text className="mt-4 text-center italic text-gray-500">Decrypt the Private Key</Text>
+          <View className="mt-4 space-y-2">
+            <TextInput
+              className="mb-2 rounded-md border border-gray-300 bg-white p-2"
+              placeholder="Enter a password to reveal your wallet private key"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
+            <Button
+              title="Decrypt the Private Key"
+              onPress={decryptPrivateKey}
+            />
+            <Text className="mt-2 font-bold">PrivateKey: {privateKey}</Text>
+          </View>
 
           <Button title="Refresh Balance" onPress={refreshBalance} />
 
@@ -164,7 +201,7 @@ export function Wallet({ blockchain }: { blockchain: any }) {
               title="Generate Wallet"
               onPress={generateWallet}
             />
-          </View>
+          </View>          
         </>
       )}
     </View>
