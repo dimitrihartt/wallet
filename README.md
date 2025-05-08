@@ -1,6 +1,9 @@
-User has access to the private key with the bip39.
-User can see the balance with the Private key + UniqueID
-User can send transaction with the PK and UID
+The user has access to the private key, and whenever he needs to make a transaction the app will sign it with him.
+He cant uninstall the app or reset the phone. He needs the private key to see his local balance. And he sends a public key signed transaction with the qrcode and the amount he has in the balance. The receiver then adds it to his own balance. There is no public distributed ledger.
+
+The user has access to the private key, and whenever he needs to make a transaction the app will sign it with him.
+He cant uninstall the app or reset the phone. He needs the private key to see his local balance. And he sends a public key signed transaction with the qrcode and the amount he has in the balance. The receiver then adds it to his own balance. There is no public distributed ledger.
+
 
 
 Steps to Implement MFA with Android Unique ID + Passphrase
