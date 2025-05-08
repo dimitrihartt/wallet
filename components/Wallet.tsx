@@ -1,8 +1,10 @@
-import { useState } from 'react';
-import { View, Text, TextInput, Button, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TextInput, Button, ScrollView, Platform } from 'react-native';
 import { Transaction } from './Transaction';
 
 import * as SecureStore from 'expo-secure-store';
+import * as Application from 'expo-application';
+
 import CryptoJS from 'crypto-js';
 
 import * as Crypto from 'expo-crypto';
@@ -36,7 +38,9 @@ async function getEncryptedPrivateKey() {
 }
 
 export function Wallet({ blockchain }: { blockchain: any }) {
-  const [UUID, setUUID] = useState('');
+  const [UUID, setUUID] = useState('');  
+  const [uniqueId, setUniqueId] = useState<string | null>(null);
+
   const [password, setPassword] = useState('');  
   const [privateKey, setPrivateKey] = useState('');
   const [publicKey, setPublicKey] = useState('');
@@ -46,8 +50,18 @@ export function Wallet({ blockchain }: { blockchain: any }) {
   const [amount, setAmount] = useState('');
   const [balance, setBalance] = useState(0);
 
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      setUniqueId(Application.getAndroidId()); // Not ANDROID_ID but works as a unique ID
+    } else {
+      setUniqueId('Not an Android device');
+    }
+  }, []);
+
+
   const generateWallet = async () => {    
     const UUID = Crypto.randomUUID(); // Generate a random UUID
+
     // const hash = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, privateKeyHex); // Create the hash of the random data
     const randomBytes = new Uint8Array(32); // Generate a random 256-bit number
     await Crypto.getRandomValues(randomBytes); // Use the Expo Crypto to generate random bytes
@@ -114,6 +128,7 @@ export function Wallet({ blockchain }: { blockchain: any }) {
           </Text>
 
           <Text className="mt-2 font-bold">Balance: {balance}</Text>
+          <Text className="mt-2 font-bold">UniqueID: {uniqueId}</Text>
 
           <Button title="Refresh Balance" onPress={refreshBalance} />
 
