@@ -20,7 +20,7 @@ export const Wallet = ({ blockchain }: { blockchain: any }) => {
   const [uniqueId, setUniqueId] = useState<string | null>(null);
 
   const [password, setPassword] = useState('');
-  const [pass, setPass] = useState(''); // Password for decryption
+  const [isPasswordSet, setIsPasswordSet] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
@@ -48,7 +48,7 @@ export const Wallet = ({ blockchain }: { blockchain: any }) => {
     // Check if the encrypted private key is stored in SecureStore
     const checkEncryptedPrivateKey = async () => {
       const encryptedKey = await SecureStore.getItemAsync('encryptedPrivateKey');
-      if (encryptedKey) {        
+      if (encryptedKey) {
         setIsEncryptedPrivateKeyStored(true); // Set to true if the encrypted key exists
       } else {
         setIsEncryptedPrivateKeyStored(false); // Set to false if the encrypted key doesn't exist
@@ -57,13 +57,48 @@ export const Wallet = ({ blockchain }: { blockchain: any }) => {
     checkEncryptedPrivateKey();
   }, []);
 
-  const generateWalletFromPrivateKey = async () => {
-    decryptPrivateKey(); // Decrypt the private key from SecureStore
-    console.log('🔐 Private key decrypted! 🔐', privateKeyHex); // Log the decrypted private key
+  const logout = async () => {
+    setUUID(''); // Clear the UUID state
+    setPassword(''); // Clear the password state
+    setIsPasswordSet(false); // Reset password set state
+    setPrivateKeyHex(''); // Clear the private key state
+    setIsEncryptedPrivateKeyStored(true); // Update state
+    setPublicKey(''); // Clear the public key state
+    setMyAddress(''); // Clear the address state
+    console.log('🔐 Logged out! Only HashedPrivateKey persists 🔐');
+  };
+
+  const decryptPrivateKey = async () => {    
+    const encryptedPrivateKey = await SecureStore.getItemAsync('encryptedPrivateKey'); // Restore the encrypted private key from secure storage
+    console.log('🔐 Encrypted private key found! 🔐', encryptedPrivateKey); // Log the encrypted private key
+    if (!encryptedPrivateKey) {
+      throw new Error('❌ Encrypted private key not found.');
+    }    
+    
+    const key = CryptoJS.SHA256(password).toString(); // Derive AES key from password
+    console.log('🔐 Key derived from password: 🔐', key); // Log the derived key
+
+    const decrypted = CryptoJS.AES.decrypt(encryptedPrivateKey, key); // Decrypt AES
+    console.log('🔐 Decrypted private key: 🔐', decrypted); // Log the decrypted private key
+
+    const privateKeyHex = decrypted.toString(CryptoJS.enc.Hex); // Convert to hex
+    console.log('🔐 Private key in hex: 🔐', privateKeyHex); // ✅ Use this Log the private key in hex format
+    if (!privateKeyHex) {
+      throw new Error('❌ Decryption failed. Possibly wrong password or corrupted data.');
+    }
+
+    setPrivateKeyHex(privateKeyHex); // Set the private key in state    
+  };
+
+  const generateWalletFromPrivateKey = async () => {    
+    await decryptPrivateKey(); // Decrypt the private key from SecureStore and await here    
+    console.log("Awaited... PrivateKeyHex:", privateKeyHex); // Log the decrypted private key
 
     const pub = secp256k1.getPublicKey(privateKeyHex, true); // Get the public key from the private key
-    setPublicKey(bytesToHex(pub)); // Convert Uint8Array to hex string and set the public key in state
+    console.log('Came here!');
+    
     console.log('🔐 Public key created! 🔐', bytesToHex(pub)); // Log the public key
+    setPublicKey(bytesToHex(pub)); // Convert Uint8Array to hex string and set the public key in state
 
     // Convert uncompressed public key to Ethereum address
     const pubKeyWithoutPrefix = pub.slice(1); // Remove the first byte (0x04) from uncompressed key
@@ -73,6 +108,8 @@ export const Wallet = ({ blockchain }: { blockchain: any }) => {
     setMyAddress(cryptoAddress); // Set the address in state
 
     console.log('🔐 Address created! 🔐', cryptoAddress);
+
+    setIsPasswordSet(true); // Set to true when the password is set
 
     // Optionally, you can also generate a balance check with your blockchain system here
     // const newBalance = blockchain.getBalanceOfAddress(publicKeyGenerated);
@@ -110,26 +147,24 @@ export const Wallet = ({ blockchain }: { blockchain: any }) => {
 
     console.log('🔐 Address created! 🔐', cryptoAddress);
 
+    // Set the isPasswordSet in state
+    setIsPasswordSet(true); // Set to true when the password is set
+
     // Optionally, you can also generate a balance check with your blockchain system here
     // const newBalance = blockchain.getBalanceOfAddress(publicKeyGenerated);
     // setBalance(newBalance);
   };
 
-  const decryptPrivateKey = async () => {
-    if (!password) {
-      setPassword(pass); // Use the password from the input field if not already set
-    }
-    const encryptedPrivateKey = await SecureStore.getItemAsync('encryptedPrivateKey'); // Restore the encrypted private key from secure storage
-    const key = CryptoJS.SHA256(password).toString(); // Derive AES key from password
-    if (!encryptedPrivateKey) {
-      throw new Error('❌ Encrypted private key not found.');
-    }
-    const decrypted = CryptoJS.AES.decrypt(encryptedPrivateKey, key); // Decrypt AES
-    const privateKeyHex = decrypted.toString(CryptoJS.enc.Utf8); // Decode to UTF-8
-    if (!privateKeyHex) {
-      throw new Error('❌ Decryption failed. Possibly wrong password or corrupted data.');
-    }
-    setPrivateKeyHex(privateKeyHex);
+  const deleteMyWallet = async () => {
+    await SecureStore.deleteItemAsync('encryptedPrivateKey'); // Delete the encrypted private key from SecureStore
+    setIsEncryptedPrivateKeyStored(false); // Update state
+    setUUID(''); // Clear the UUID state
+    setPassword(''); // Clear the password state
+    setIsPasswordSet(false); // Reset password set state
+    setPublicKey(''); // Clear the public key state
+    setMyAddress(''); // Clear the address state
+    setPrivateKeyHex(''); // Clear the private key state
+    console.log('🔐 Wallet deleted! 🔐');
   };
 
   const signMessage = async () => {
@@ -237,7 +272,7 @@ export const Wallet = ({ blockchain }: { blockchain: any }) => {
   return (
     <View className="rounded-md bg-white px-2 pb-2 shadow-md">
       {isEncryptedPrivateKeyStored ? (
-        password ? (
+        isPasswordSet ? (
           <>
             <View className="my-2 rounded-xl bg-gray-200 p-4 shadow-md">
               <Text className="mb-2 text-lg font-bold text-gray-800">Wallet</Text>
@@ -318,21 +353,27 @@ export const Wallet = ({ blockchain }: { blockchain: any }) => {
               <Text className="mb-2 text-gray-600">Signature: {signature}</Text>
               <Text className="mb-2 text-gray-600">RecoveryBit: {recoveryBit}</Text>
             </View>
+            <Button title="Logout" onPress={logout} />
           </>
         ) : (
           <>
             <Text className="mt-4 text-center italic text-gray-500">
               🔐 Return B: Encrypted key found, please enter your password.
             </Text>
-            <View className="mt-4 space-y-2">
+            <View className="mt-4">
               <TextInput
                 className="mb-2 rounded-md border border-gray-300 bg-white p-2"
                 placeholder="Enter your password to regenerate your wallet"
                 secureTextEntry
-                value={pass}
-                onChangeText={setPass}
+                value={password}
+                onChangeText={setPassword}
               />
-              <Button title="Generate Wallet" onPress={generateWalletFromPrivateKey} />
+              <View className="my-4 space-y-2">
+                <Button title="Regenerate Wallet" onPress={generateWalletFromPrivateKey} />
+              </View>
+              <View>
+                <Button title="Delete my Wallet" onPress={deleteMyWallet} />
+              </View>
             </View>
           </>
         )
