@@ -27,7 +27,9 @@
     "buffer": "^6.0.3",
     "crypto-js": "^3.3.0",
     "debug": "^4.4.0",
+    "ethereum-cryptography": "^3.2.0",
     "expo": "^52.0.46",
+    "expo-application": "~6.0.2",
     "expo-camera": "~16.0.18",
     "expo-constants": "~17.0.8",
     "expo-crypto": "~14.0.2",
@@ -36,6 +38,7 @@
     "expo-device": "~7.0.3",
     "expo-image-picker": "~16.0.6",
     "expo-linking": "~7.0.5",
+    "expo-random": "^14.0.1",
     "expo-router": "~4.0.6",
     "expo-secure-store": "~14.0.1",
     "expo-status-bar": "~2.0.1",
@@ -53,8 +56,7 @@
     "react-native-svg": "^15.11.2",
     "react-native-url-polyfill": "^2.0.0",
     "react-native-web": "~0.19.10",
-    "zustand": "^4.5.1",
-    "expo-application": "~6.0.2"
+    "zustand": "^4.5.1"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
