@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import 'react-native-get-random-values';
+
+import { useEffect, useState } from 'react';
 import { View, Text, TextInput, Button, ScrollView, Platform } from 'react-native';
 import { Transaction } from './Transaction';
 
@@ -9,7 +11,12 @@ import CryptoJS from 'crypto-js';
 
 import { keccak256 } from 'ethereum-cryptography/keccak';
 import { secp256k1 } from 'ethereum-cryptography/secp256k1';
-import { utf8ToBytes, hexToBytes, bytesToHex } from 'ethereum-cryptography/utils';
+import { pbkdf2Sync } from 'ethereum-cryptography/pbkdf2';
+import { utf8ToBytes, hexToBytes, bytesToHex, toHex } from 'ethereum-cryptography/utils';
+
+import { generateMnemonic, validateMnemonic, mnemonicToSeedSync } from '@scure/bip39';
+import { HDKey } from '@scure/bip32';
+import { wordlist } from '@scure/bip39/wordlists/english';
 
 import * as secp from '@noble/secp256k1';
 
@@ -19,10 +26,13 @@ export const Wallet = ({ blockchain }: { blockchain: any }) => {
   const [UUID, setUUID] = useState('');
   const [uniqueId, setUniqueId] = useState<string | null>(null);
 
-  const [password, setPassword] = useState('');
-  const [isPasswordSet, setIsPasswordSet] = useState(false);
-  const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [password, setPassword] = useState('');
+  const [oldPassword, setOldPassword] = useState('');
+  const [isPasswordSet, setIsPasswordSet] = useState(false);
+
+  const [mnemonic, setMnemonic] = useState('');
+  const [seed, setSeed] = useState('');
 
   const [privateKeyHex, setPrivateKeyHex] = useState(''); // Store the private key in hex format
   const [publicKey, setPublicKey] = useState('');
@@ -57,6 +67,90 @@ export const Wallet = ({ blockchain }: { blockchain: any }) => {
     checkEncryptedPrivateKey();
   }, []);
 
+  function aesEncrypt(
+    plaintextBytes: Uint8Array<ArrayBufferLike>,
+    key: Uint8Array<ArrayBufferLike>
+  ) {
+    const iv = Crypto.getRandomValues(new Uint8Array(16));
+
+    //const crypto = require('crypto'); // only for Expo Go (with fallback)
+    //const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+    //const encrypted = Buffer.concat([cipher.update(plaintextBytes), cipher.final()]);
+
+    //return { iv, ciphertext: encrypted };
+  }
+
+  function aesDecrypt(ciphertext: any, key: any, iv: any) {
+    //const crypto = require('crypto');
+    //const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
+    //const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+    //return decrypted;
+  }
+
+  const generateWallet = async () => {
+    if (!password || !UUID) {
+      throw new Error('Password and UUID are required to encrypt the private key.');
+    }
+
+    const mnemonic = generateMnemonic(wordlist); // Generate a mnemonic phrase
+    setMnemonic(mnemonic); // Set the mnemonic in state
+
+    const isValid = validateMnemonic(mnemonic, wordlist);
+    if (!isValid) {
+      throw new Error('❌ Invalid mnemonic generated.');
+    }
+
+    const seed = mnemonicToSeedSync(mnemonic); // Convert mnemonic to seed
+    const root = HDKey.fromMasterSeed(seed); // Create HDKey from seed
+    const child = root.derive("m/44'/60'/0'/0/0"); // Ethereum path
+
+    const privateKey = child.privateKey; // Get the private key
+    if (!privateKey) {
+      throw new Error('❌ Private key is null.');
+    }
+    const privateKeyHex = toHex(privateKey); // Convert to hex
+    setPrivateKeyHex(privateKeyHex); // Set the private key in state
+
+    // 🔐 Encrypt the private key using the password and UUID
+    const salt = utf8ToBytes(UUID); // Use UUID as the salt
+    const derivedKey = pbkdf2Sync(utf8ToBytes(password), salt, 100000, 32, 'sha256'); // Derive a 256-bit key
+
+    const iv = Crypto.getRandomValues(new Uint8Array(16)); // Generate a random IV
+    const encrypted = CryptoJS.AES.encrypt(
+      privateKeyHex,
+      CryptoJS.enc.Hex.parse(bytesToHex(derivedKey)),
+      {
+        iv: CryptoJS.enc.Hex.parse(bytesToHex(iv)),
+      }
+    );
+
+    // Create a payload with the IV and ciphertext
+    const payload = {
+      iv: bytesToHex(iv),
+      ciphertext: encrypted.toString(),
+    };
+
+    // Store the encrypted private key in SecureStore
+    await SecureStore.setItemAsync('encryptedPrivateKey', JSON.stringify(payload));
+    setIsEncryptedPrivateKeyStored(true); // Update state
+    console.log('🔐 Encrypted private key stored in SecureStore! 🔐', payload);
+
+    const publicKey = child.publicKey; // Get the public key
+    if (!publicKey) {
+      throw new Error('❌ Public key is null.');
+    }
+
+    const publicKeyHex = toHex(publicKey); // Convert to hex
+    setPublicKey(publicKeyHex); // Set the public key in state
+
+    const pubKey =
+      publicKey.length === 65 && publicKey[0] === 0x04 ? publicKey.slice(1) : publicKey; // Remove the first byte (0x04) from uncompressed key
+    const cryptoAddress = '0x' + toHex(keccak256(pubKey).slice(-20)); // Convert to hex and prefix with "0x"
+    setMyAddress(cryptoAddress); // Set the address in state
+
+    console.log('🔐 Address created! 🔐', cryptoAddress); // Log the address
+  };
+
   const logout = async () => {
     setUUID(''); // Clear the UUID state
     setPassword(''); // Clear the password state
@@ -68,35 +162,46 @@ export const Wallet = ({ blockchain }: { blockchain: any }) => {
     console.log('🔐 Logged out! Only HashedPrivateKey persists 🔐');
   };
 
-  const decryptPrivateKey = async () => {    
-    const encryptedPrivateKey = await SecureStore.getItemAsync('encryptedPrivateKey'); // Restore the encrypted private key from secure storage
-    console.log('🔐 Encrypted private key found! 🔐', encryptedPrivateKey); // Log the encrypted private key
+  const decryptPrivateKey = async () => {
+    const encryptedPrivateKey = await SecureStore.getItemAsync('encryptedPrivateKey'); // Retrieve the encrypted private key
     if (!encryptedPrivateKey) {
       throw new Error('❌ Encrypted private key not found.');
-    }    
-    
-    const key = CryptoJS.SHA256(password).toString(); // Derive AES key from password
-    console.log('🔐 Key derived from password: 🔐', key); // Log the derived key
+    }
 
-    const decrypted = CryptoJS.AES.decrypt(encryptedPrivateKey, key); // Decrypt AES
-    console.log('🔐 Decrypted private key: 🔐', decrypted); // Log the decrypted private key
+    const payload = JSON.parse(encryptedPrivateKey);
+    const { iv, ciphertext } = payload;
 
-    const privateKeyHex = decrypted.toString(CryptoJS.enc.Hex); // Convert to hex
-    console.log('🔐 Private key in hex: 🔐', privateKeyHex); // ✅ Use this Log the private key in hex format
+    if (!password || !UUID) {
+      throw new Error('Password and UUID are required to decrypt the private key.');
+    }
+
+    const salt = utf8ToBytes(UUID); // Use UUID as the salt
+    const derivedKey = pbkdf2Sync(utf8ToBytes(password), salt, 100000, 32, 'sha256'); // Derive a 256-bit key
+
+    const decrypted = CryptoJS.AES.decrypt(
+      ciphertext,
+      CryptoJS.enc.Hex.parse(bytesToHex(derivedKey)),
+      {
+        iv: CryptoJS.enc.Hex.parse(iv),
+      }
+    );
+
+    const privateKeyHex = decrypted.toString(CryptoJS.enc.Utf8); // Convert to UTF-8
     if (!privateKeyHex) {
       throw new Error('❌ Decryption failed. Possibly wrong password or corrupted data.');
     }
 
-    setPrivateKeyHex(privateKeyHex); // Set the private key in state    
+    setPrivateKeyHex(privateKeyHex); // Set the private key in state
+    console.log('🔐 Private key decrypted successfully:', privateKeyHex);
   };
 
-  const generateWalletFromPrivateKey = async () => {    
-    await decryptPrivateKey(); // Decrypt the private key from SecureStore and await here    
-    console.log("Awaited... PrivateKeyHex:", privateKeyHex); // Log the decrypted private key
+  const generateWalletFromPrivateKey = async () => {
+    await decryptPrivateKey(); // Decrypt the private key from SecureStore and await here
+    console.log('Awaited... PrivateKeyHex:', privateKeyHex); // Log the decrypted private key
 
     const pub = secp256k1.getPublicKey(privateKeyHex, true); // Get the public key from the private key
     console.log('Came here!');
-    
+
     console.log('🔐 Public key created! 🔐', bytesToHex(pub)); // Log the public key
     setPublicKey(bytesToHex(pub)); // Convert Uint8Array to hex string and set the public key in state
 
@@ -116,7 +221,7 @@ export const Wallet = ({ blockchain }: { blockchain: any }) => {
     // setBalance(newBalance);
   };
 
-  const generateWallet = async () => {
+  const generateWalletOld = async () => {
     // Generate a random UUID
     setUUID(Crypto.randomUUID()); // Generate a random UUID
 
@@ -272,6 +377,7 @@ export const Wallet = ({ blockchain }: { blockchain: any }) => {
   return (
     <View className="rounded-md bg-white px-2 pb-2 shadow-md">
       {isEncryptedPrivateKeyStored ? (
+
         isPasswordSet ? (
           <>
             <View className="my-2 rounded-xl bg-gray-200 p-4 shadow-md">

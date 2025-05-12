@@ -1,14 +1,13 @@
 import { Stack } from 'expo-router';
-
 import { Container } from '~/components/Container';
-import { ScreenContent } from '~/components/ScreenContent';
+import WalletGenerator from '~/components/WalletGenerator';
 
 export default function Home() {
   return (
     <>
-      <Stack.Screen options={{ title: 'Tab One' }} />
+      <Stack.Screen options={{ title: 'Wallet' }} />
       <Container>
-        <ScreenContent path="app/(drawer)/(tabs)/index.tsx" title="Tab One" />
+        <WalletGenerator />
       </Container>
     </>
   );

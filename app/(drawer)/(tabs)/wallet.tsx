@@ -4,13 +4,12 @@ import { Block } from '~/components/Block';
 
 import { Container } from '~/components/Container';
 import { ScreenContent } from '~/components/ScreenContent';
-import Transaction from '~/components/Transaction';
 import { Wallet } from '~/components/Wallet';
 
 export default function Home() {
   return (
     <>
-      <Stack.Screen options={{ title: 'Wallet' }} />
+      <Stack.Screen options={{ title: 'Settings' }} />
       <ScrollView contentContainerClassName="bg-white dark:bg-gray-900">
         <Container>
           {/* <ScreenContent path="app/(drawer)/(tabs)/two.tsx" title="Tab Two" /> */}
