@@ -1,6 +1,11 @@
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { useState } from 'react';
-import { Button, Text, TouchableOpacity, View, StyleSheet } from 'react-native';
+import { Button, Text, TouchableOpacity, View, StyleSheet, Dimensions } from 'react-native';
+
+const { width } = Dimensions.get('window');
+const FRAME_SIZE = width * 0.7; // 70% of screen width
+const BRACKET_SIZE = 30;
+const BRACKET_THICKNESS = 4;
 
 export default function App() {
   const [facing, setFacing] = useState<CameraType>('back');
@@ -51,8 +56,19 @@ export default function App() {
           style={styles.cameraView}
           facing={facing}
           onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}>
-          {/* QR Code Aiming Brackets */}
-          <View style={styles.aimingBrackets} />
+          {/* QR Code Aiming Brackets */}          
+          <View style={styles.overlay}>
+            <View style={styles.frame}>
+              {/* Top Left */}
+              <View style={[styles.corner, styles.topLeft]} />
+              {/* Top Right */}
+              <View style={[styles.corner, styles.topRight]} />
+              {/* Bottom Left */}
+              <View style={[styles.corner, styles.bottomLeft]} />
+              {/* Bottom Right */}
+              <View style={[styles.corner, styles.bottomRight]} />
+            </View>
+          </View>
 
           {/* Flip Camera Button */}
           <View style={styles.flipButtonContainer}>
@@ -109,22 +125,12 @@ const styles = StyleSheet.create({
   scanAgainText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: 'black'    
+    color: 'black',
   },
   cameraView: {
     flex: 1, // Ensure the camera view takes up the full available space
     width: '100%', // Make sure it spans the full width of the screen
     height: '100%', // Make sure it spans the full height of the screen
-  },
-  aimingBrackets: {
-    position: 'absolute',
-    top: '30%', // Adjust to position the brackets in the center
-    left: '20%', // Adjust to center horizontally
-    width: '60%', // Width of the aiming brackets
-    height: '30%', // Height of the aiming brackets
-    borderWidth: 2,
-    borderColor: 'white',
-    borderRadius: 10, // Optional: Rounded corners for the brackets
   },
   flipButtonContainer: {
     position: 'absolute',
@@ -142,5 +148,45 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: 'black',
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  frame: {
+    width: FRAME_SIZE,
+    height: FRAME_SIZE,
+    position: 'relative',
+  },
+  corner: {
+    width: BRACKET_SIZE,
+    height: BRACKET_SIZE,
+    position: 'absolute',
+    borderColor: 'white',
+  },
+  topLeft: {
+    top: 0,
+    left: 0,
+    borderTopWidth: BRACKET_THICKNESS,
+    borderLeftWidth: BRACKET_THICKNESS,
+  },
+  topRight: {
+    top: 0,
+    right: 0,
+    borderTopWidth: BRACKET_THICKNESS,
+    borderRightWidth: BRACKET_THICKNESS,
+  },
+  bottomLeft: {
+    bottom: 0,
+    left: 0,
+    borderBottomWidth: BRACKET_THICKNESS,
+    borderLeftWidth: BRACKET_THICKNESS,
+  },
+  bottomRight: {
+    bottom: 0,
+    right: 0,
+    borderBottomWidth: BRACKET_THICKNESS,
+    borderRightWidth: BRACKET_THICKNESS,
   },
 });
