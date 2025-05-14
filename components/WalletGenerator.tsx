@@ -27,16 +27,20 @@ import { HDKey } from '@scure/bip32';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import QRCode from 'react-native-qrcode-svg';
 import CryptoJS from 'crypto-js';
+import { useFocusEffect } from '@react-navigation/native'; // Import useFocusEffect
 
 const WalletGenerator = () => {
   // Replace this with the user's input mnemonic
   const existingMnemonic =
     'nature uncover antenna orbit tank business nominee robot mix burst stamp slab';
   const [mnemonic, setMnemonic] = useState('');
+
   const [privateKey, setPrivateKey] = useState('');
   const [cryptoAddress, setCryptoAddress] = useState('');
+
   const [modalVisible, setModalVisible] = useState(false);
   const [countdown, setCountdown] = useState(30);
+
   const [password, setPassword] = useState('');
   const [isEncryptedPrivateKeyStored, setIsEncryptedPrivateKeyStored] = useState(false);
   const [error, setError] = useState('');
@@ -62,6 +66,32 @@ const WalletGenerator = () => {
     }
     return () => clearInterval(timer); // Cleanup timer on unmount or modal close
   }, [modalVisible]);
+
+  // Check if the private key is stored in SecureStore
+  const checkPrivateKey = async () => {
+    try {
+      const storedKey = await SecureStore.getItemAsync(STORAGE_KEY);
+      setIsEncryptedPrivateKeyStored(!!storedKey); // Update state based on whether the key exists
+      if (!!storedKey === false) {
+        deleteWallet();
+      }
+      console.log('Private key stored:', !!storedKey);
+    } catch (error) {
+      console.error('Error checking SecureStore:', error);
+    }
+  };
+
+  // Use useEffect to check the key when the component mounts
+  useEffect(() => {
+    checkPrivateKey();
+  }, []);
+
+  // Use useFocusEffect to recheck the key whenever the screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      checkPrivateKey();
+    }, [])
+  );
 
   const generateWallet = async () => {
     try {
@@ -150,6 +180,20 @@ const WalletGenerator = () => {
     setPrivateKey(privKey);
   };
 
+  async function deleteWallet() {
+    try {
+      console.log('🗑️ Deleting wallet...');
+      setMnemonic('');
+      setPrivateKey('');      
+      setCryptoAddress('');
+      setPassword('');
+      setError('');
+      console.log('Wallet deleted successfully.');
+    } catch (error) {
+      console.error('Error deleting wallet:', error);
+    }
+  }
+
   // Encrypt and Secure store
   // 1.	Retrieve Android UUID
   // 2.	Combine UUID + user passphrase to derive a key
@@ -177,6 +221,15 @@ const WalletGenerator = () => {
                 <Text className="mt-4 text-center">Address: {cryptoAddress}</Text>
                 <View className="my-2 w-full items-center justify-center space-y-2 rounded-xl bg-gray-200 p-4">
                   <Text className="my-2 text-center font-bold">Your Wallet is Secured!</Text>
+                  {/* <TouchableOpacity
+                    onPress={async () => {
+                      await SecureStore.deleteItemAsync(STORAGE_KEY);
+                      checkPrivateKey(); // Recheck after deletion
+                    }}
+                    className="mt-4 bg-red-500 p-4 rounded-lg"
+                  >
+                    <Text className="text-white text-center">Delete Wallet</Text>
+                  </TouchableOpacity> */}
                 </View>
               </View>
             ) : (
@@ -201,9 +254,22 @@ const WalletGenerator = () => {
                       onChangeText={setPassword}
                     />
                   </View>
-                  <TouchableOpacity onPress={securePrivateKey}>
+                  <TouchableOpacity
+                    onPress={async () => {
+                      securePrivateKey();
+                      checkPrivateKey(); // Recheck after storing
+                    }}>
                     <Icon name="vpn-key" size={56} color="gray" />
                   </TouchableOpacity>
+                  {/* <TouchableOpacity
+                    onPress={async () => {
+                      await SecureStore.setItemAsync(STORAGE_KEY, 'dummy-encrypted-key');
+                      checkPrivateKey(); // Recheck after storing
+                    }}
+                    className="mt-4 bg-blue-500 p-4 rounded-lg"
+                  >
+                    <Text className="text-white text-center">Secure Wallet</Text>
+                  </TouchableOpacity> */}
                 </View>
               </View>
             )
@@ -251,7 +317,7 @@ const WalletGenerator = () => {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#fff',
-  }, 
+  },
   error: {
     fontSize: 16,
     color: 'red',
