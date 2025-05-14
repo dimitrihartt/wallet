@@ -20,10 +20,10 @@ const DrawerLayout = () => {
       <Drawer.Screen
         name="(tabs)"
         options={{
-          headerTitle: 'Tabs',
-          drawerLabel: 'Tabs',
+          headerTitle: 'Ascend Wallet',
+          drawerLabel: 'Wallet',
           drawerIcon: ({ size, color }) => (
-            <MaterialIcons name="border-bottom" size={size} color={color} />
+            <MaterialIcons name="wallet" size={size} color={color} />
           ),
           headerRight: () => (
             <Link href="/modal" asChild>
