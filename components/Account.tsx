@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../utils/supabase';
 import { StyleSheet, View, Alert } from 'react-native';
-import { Button, Input } from '@rneui/themed';
+
 import { Session } from '@supabase/supabase-js';
 import Avatar from './Avatar';
 
@@ -89,7 +89,7 @@ export default function Account({ session }: { session: Session }) {
   }
 
   return (
-    <View style={styles.container}>
+    {/* <View style={styles.container}>
       <View>
         <Avatar
           size={200}
@@ -133,7 +133,7 @@ export default function Account({ session }: { session: Session }) {
       <View style={styles.verticallySpaced}>
         <Button title="Sign Out" onPress={() => supabase.auth.signOut()} />
       </View>
-    </View>
+    </View> */}
   );
 }
 

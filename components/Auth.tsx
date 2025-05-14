@@ -1,7 +1,15 @@
 import React, { useState } from 'react'
 import { Alert, StyleSheet, View, AppState } from 'react-native'
 import { supabase } from '../utils/supabase'
-import { Button, Input } from '@rneui/themed'
+
+import { Input, InputField, InputSlot, InputIcon } from './ui/input'
+import { Button, ButtonIcon, ButtonText } from './ui/button'
+import { Heading } from './ui/heading'
+import { FormControl } from './ui/form-control'
+import { VStack } from './ui/vstack'
+import { Text } from './ui/text'
+import { EyeIcon, EyeOffIcon } from "./ui/icon"
+
 
 // Tells Supabase Auth to continuously refresh the session automatically if
 // the app is in the foreground. When this is added, you will continue to receive
@@ -18,6 +26,7 @@ AppState.addEventListener('change', (state) => {
 export default function Auth() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = React.useState(false)
   const [loading, setLoading] = useState(false)
 
   async function signInWithEmail() {
@@ -46,50 +55,61 @@ export default function Auth() {
     setLoading(false)
   }
 
+  const handleState = () => {
+    setShowPassword((showState) => {
+      return !showState
+    })
+  }
+
   return (
-    <View style={styles.container}>
-      <View style={[styles.verticallySpaced, styles.mt20]}>
-        <Input
-          label="Email"
-          leftIcon={{ type: 'font-awesome', name: 'envelope' }}
-          onChangeText={(text) => setEmail(text)}
-          value={email}
-          placeholder="email@address.com"
-          autoCapitalize={'none'}
-        />
-      </View>
-      <View style={styles.verticallySpaced}>
-        <Input
-          label="Password"
-          leftIcon={{ type: 'font-awesome', name: 'lock' }}
-          onChangeText={(text) => setPassword(text)}
-          value={password}
-          secureTextEntry={true}
-          placeholder="Password"
-          autoCapitalize={'none'}
-        />
-      </View>
-      <View style={[styles.verticallySpaced, styles.mt20]}>
-        <Button title="Sign in" disabled={loading} onPress={() => signInWithEmail()} />
-      </View>
-      <View style={styles.verticallySpaced}>
-        <Button title="Sign up" disabled={loading} onPress={() => signUpWithEmail()} />
-      </View>
-    </View>
+    <FormControl className="p-4 border rounded-lg border-outline-300">
+      <VStack space="xl">
+        <Heading className="text-typography-900">Login</Heading>
+        <VStack space="xs">
+          <Text className="text-typography-500">Email</Text>
+
+          <Input className="min-w-[250px]">
+            <InputField 
+              type="text"
+              placeholder="email@example.com"
+              value={email}
+              onChangeText={(text) => setEmail(text)}              
+            />
+          </Input>
+
+        </VStack>
+        <VStack space="xs">
+          <Text className="text-typography-500">Password</Text>
+          <Input className="text-center">
+            <InputField
+              placeholder="password"
+              value={password}
+              onChangeText={(text) => setPassword(text)}
+              type={showPassword ? "text" : "password"} />
+            <InputSlot className="pr-3" onPress={handleState}>
+              <InputIcon as={showPassword ? EyeIcon : EyeOffIcon} />
+            </InputSlot>
+          </Input>
+        </VStack>
+        <Button
+          className="ml-auto"
+          disabled={loading}
+          onPress={() => {
+            signInWithEmail()
+          }}
+        >
+          <ButtonText className="text-typography-0">Sign in</ButtonText>
+        </Button>
+        <Button
+          className="ml-auto"
+          disabled={loading}
+          onPress={() => {
+            signUpWithEmail()
+          }}
+        >
+          <ButtonText className="text-typography-0">Sign up</ButtonText>
+        </Button>
+      </VStack>
+    </FormControl>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    marginTop: 40,
-    padding: 12,
-  },
-  verticallySpaced: {
-    paddingTop: 4,
-    paddingBottom: 4,
-    alignSelf: 'stretch',
-  },
-  mt20: {
-    marginTop: 20,
-  },
-})
