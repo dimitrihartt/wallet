@@ -28,6 +28,9 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import QRCode from 'react-native-qrcode-svg';
 import CryptoJS from 'crypto-js';
 import { useFocusEffect } from '@react-navigation/native'; // Import useFocusEffect
+import { Box } from './ui/box';
+import { VStack } from './ui/vstack';
+
 
 const WalletGenerator = () => {
   // Replace this with the user's input mnemonic
@@ -184,7 +187,7 @@ const WalletGenerator = () => {
     try {
       console.log('🗑️ Deleting wallet...');
       setMnemonic('');
-      setPrivateKey('');      
+      setPrivateKey('');
       setCryptoAddress('');
       setPassword('');
       setError('');
@@ -274,13 +277,15 @@ const WalletGenerator = () => {
               </View>
             )
           ) : (
-            <View className="flex-1 items-center justify-center bg-white p-4">
-              <Text className="text-lg font-bold">Create your Wallet</Text>
-              <TouchableOpacity onPress={generateWallet}>
-                <Icon name="wallet" size={56} color="gray" />
-              </TouchableOpacity>
-              <Text className="mt-4 text-center">Tap the Wallet Icon to start!</Text>
-            </View>
+            <Box className="max-h-full justify-center items-center">
+              <VStack space="md" reversed={false}>
+                <Text className="text-lg font-bold">Create your Wallet</Text>
+                <TouchableOpacity onPress={generateWallet}>
+                  <Icon name="wallet" size={56} color="gray" />
+                </TouchableOpacity>
+                <Text className="mt-4 text-center">Tap the Wallet Icon to start!</Text>                              
+              </VStack>
+            </Box>
           )}
 
           {/* Custom Modal */}
@@ -301,7 +306,7 @@ const WalletGenerator = () => {
                   className={`rounded-lg bg-blue-500 p-4 ${
                     countdown > 0 ? 'opacity-50' : 'opacity-100'
                   }`}>
-                  <Text className="text-center text-white text-lg">
+                  <Text className="text-center text-lg text-white">
                     {countdown > 0 ? `OK (${countdown}s)` : 'OK'}
                   </Text>
                 </Pressable>
