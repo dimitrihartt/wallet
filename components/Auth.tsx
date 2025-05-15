@@ -2,13 +2,13 @@ import React, { useState } from 'react'
 import { Alert, StyleSheet, View, AppState } from 'react-native'
 import { supabase } from '../utils/supabase'
 
-import { Input, InputField, InputSlot, InputIcon } from './ui/input'
-import { Button, ButtonIcon, ButtonText } from './ui/button'
-import { Heading } from './ui/heading'
-import { FormControl } from './ui/form-control'
-import { VStack } from './ui/vstack'
-import { Text } from './ui/text'
-import { EyeIcon, EyeOffIcon } from "./ui/icon"
+import { Input, InputField, InputSlot, InputIcon } from '@/components/ui/input'
+import { Button, ButtonIcon, ButtonText } from '@/components/ui/button'
+import { Heading } from '@/components/ui/heading'
+import { FormControl } from '@/components/ui/form-control'
+import { VStack } from '@/components/ui/vstack'
+import { Text } from '@/components/ui/text'
+import { EyeIcon, EyeOffIcon } from "@/components/ui/icon"
 
 
 // Tells Supabase Auth to continuously refresh the session automatically if

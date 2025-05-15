@@ -26,7 +26,7 @@ const DrawerLayout = () => {
             <MaterialIcons name="wallet" size={size} color={color} />
           ),
           headerRight: () => (
-            <Link href="/modal" asChild>
+            <Link href="/qrcode-modal" asChild>
               <HeaderButton />
             </Link>
           ),

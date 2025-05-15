@@ -24,7 +24,7 @@ export default function RootLayout() {
         <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />
         <Stack>
           <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ title: 'Modal', presentation: 'modal' }} />
+          <Stack.Screen name="qrcode-modal" options={{ title: 'QRCode', presentation: 'modal' }} />
         </Stack>
       </GestureHandlerRootView></GluestackUIProvider>
   );

@@ -301,7 +301,7 @@ const WalletGenerator = () => {
                   className={`rounded-lg bg-blue-500 p-4 ${
                     countdown > 0 ? 'opacity-50' : 'opacity-100'
                   }`}>
-                  <Text className="text-center text-white">
+                  <Text className="text-center text-white text-lg">
                     {countdown > 0 ? `OK (${countdown}s)` : 'OK'}
                   </Text>
                 </Pressable>

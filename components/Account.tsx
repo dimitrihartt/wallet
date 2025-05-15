@@ -3,7 +3,16 @@ import { supabase } from '../utils/supabase';
 import { StyleSheet, View, Alert } from 'react-native';
 
 import { Session } from '@supabase/supabase-js';
-import Avatar from './Avatar';
+import ProfileAvatar from './ProfileAvatar';
+
+import { Box } from '@/components/ui/box';
+import { Button, ButtonText, ButtonIcon } from '@/components/ui/button';
+import { Center } from '@/components/ui/center';
+import { Heading } from '@/components/ui/heading';
+import { Input, InputField } from '@/components/ui/input';
+import { Text } from '@/components/ui/text';
+import { VStack } from '@/components/ui/vstack';
+import { ArrowLeftIcon } from '@/components/ui/icon';
 
 export default function Account({ session }: { session: Session }) {
   const [loading, setLoading] = useState(true);
@@ -89,65 +98,93 @@ export default function Account({ session }: { session: Session }) {
   }
 
   return (
-    {/* <View style={styles.container}>
-      <View>
-        <Avatar
-          size={200}
-          url={avatarUrl}
-          onUpload={(url: string) => {
-            setAvatarUrl(url);
-            updateProfile({ username, firstname, lastname, website, avatar_url: url });
-          }}
-        />
-      </View>
-      <View style={[styles.verticallySpaced, styles.mt20]}>
-        <Input label="Email" value={session?.user?.email} disabled />
-      </View>
-      <View style={styles.verticallySpaced}>
-        <Input label="Username" value={username || ''} onChangeText={(text) => setUsername(text)} />
-      </View>
-      <View style={styles.verticallySpaced}>
-        <Input
-          label="Firstname"
-          value={firstname || ''}
-          onChangeText={(text) => setFirstname(text)}
-        />
-      </View>
-      <View style={styles.verticallySpaced}>
-        <Input label="Lastname" value={lastname || ''} onChangeText={(text) => setLastname(text)} />
-      </View>
-      <View style={styles.verticallySpaced}>
-        <Input label="Website" value={website || ''} onChangeText={(text) => setWebsite(text)} />
-      </View>
+    <Center>
+      <Box className="m-1 w-full rounded-lg border border-background-300 p-5">
+        <VStack className="pb-4" space="xs">
+          <Heading className="leading-[30px]">My Profile</Heading>
+          <Text className="mb-2 text-sm">FYI: The below data is on our servers.</Text>
+          <ProfileAvatar
+            size={200}
+            url={avatarUrl}
+            onUpload={(url: string) => {
+              setAvatarUrl(url);
+              updateProfile({ username, firstname, lastname, website, avatar_url: url });
+            }}
+          />
+        </VStack>
+        <VStack space="xl" className="py-2">
+          <Text className="text-typography-500">E-mail</Text>
+          <Input variant="outline" size="md" isDisabled={true}>
+            <InputField className="py-2" placeholder="Email" value={session?.user?.email} />
+          </Input>
+          <Text className="text-typography-500">Username</Text>
+          <Input variant="outline" size="md" isDisabled={false}>
+            <InputField
+              className="py-2"
+              placeholder="Username"
+              value={username || ''}
+              onChange={e => setUsername(e.nativeEvent.text)}
+            />
+          </Input>
 
-      <View style={[styles.verticallySpaced, styles.mt20]}>
-        <Button
-          title={loading ? 'Loading ...' : 'Update'}
-          onPress={() =>
-            updateProfile({ username, firstname, lastname, website, avatar_url: avatarUrl })
-          }
-          disabled={loading}
-        />
-      </View>
+          <Text className="text-typography-500">Firstname</Text>
+          <Input variant="outline" size="md" isDisabled={false}>
+            <InputField
+              className="py-2"
+              placeholder="Firstname"
+              value={firstname || ''}
+              onChange={e => setFirstname(e.nativeEvent.text)}
+            />
+          </Input>
 
-      <View style={styles.verticallySpaced}>
-        <Button title="Sign Out" onPress={() => supabase.auth.signOut()} />
-      </View>
-    </View> */}
+          <Text className="text-typography-500">Lastname</Text>
+          <Input variant="outline" size="md" isDisabled={false}>
+            <InputField
+              className="py-2"
+              placeholder="Lastname"
+              value={lastname || ''}
+              onChange={e => setLastname(e.nativeEvent.text)}
+            />
+          </Input>
+
+          <Text className="text-typography-500">Website</Text>
+          <Input variant="outline" size="md" isDisabled={false}>
+            <InputField
+              className="py-2"
+              placeholder="Website"
+              value={website || ''}
+              onChange={e => setWebsite(e.nativeEvent.text)}
+            />
+          </Input>
+          {/* <Text className="text-typography-500">Change password</Text>
+            <Input>
+              <InputField className="py-2" placeholder="New password" />
+            </Input>
+            <Input>
+              <InputField className="py-2" placeholder="Confirm new password" />
+            </Input> */}
+        </VStack>
+        <VStack space="lg" className="pt-4">
+          <Button
+            size="sm"
+            isDisabled={loading}
+            onPress={() =>
+              updateProfile({ username, firstname, lastname, website, avatar_url: avatarUrl })
+            }>
+            <ButtonText>{loading ? 'Loading ...' : 'Update'}</ButtonText>
+          </Button>
+          <Box className="flex flex-row">
+            <Button
+              variant="link"
+              size="sm"
+              className="p-0"
+              onPress={() => supabase.auth.signOut()}>
+              <ButtonIcon className="mr-1" size="md" as={ArrowLeftIcon} />
+              <ButtonText>Sign Out</ButtonText>
+            </Button>
+          </Box>
+        </VStack>
+      </Box>
+    </Center>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    marginTop: 40,
-    padding: 20,
-  },
-  verticallySpaced: {
-    paddingTop: 4,
-    paddingBottom: 4,
-    alignSelf: 'stretch',
-  },
-  mt20: {
-    marginTop: 20,
-  },
-});
