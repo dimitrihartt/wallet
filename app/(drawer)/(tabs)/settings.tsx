@@ -88,7 +88,8 @@ const SettingsPage = () => {
       throw new Error('❌ Decryption failed. Possibly wrong pin or corrupted data.');
     }
     setPrivateKeyHex(privateKeyHex);
-    setIsPinProvidedWorking(true);
+    setShowModalPin(false)
+    setShowModalNewPin(true)
   }
 
   const changePin = async () => {
@@ -125,25 +126,20 @@ const SettingsPage = () => {
   return (
     <>
       <Stack.Screen options={{ title: 'Settings' }} />
-      <ScrollView contentContainerClassName="bg-white dark:bg-gray-900">
+      <ScrollView contentContainerClassName="h-full bg-white dark:bg-gray-900">
         <Container>
           <View className="flex-1 bg-gray-100 p-4">
             <Text className="mb-6 text-2xl font-bold text-gray-800">Settings</Text>
 
-            {/* Delete Wallet Button */}
-            <TouchableOpacity
-              onPress={() => setShowModal(true)}
-              className="mb-4 rounded-lg bg-red-500 p-4">
-              <Text className="text-center font-semibold text-white">Delete Your Wallet</Text>
-            </TouchableOpacity>
-
             {/* Change PIN Button */}
-            <TouchableOpacity onPress={() => setShowModalPin(true)} className="mb-4 rounded-lg bg-blue-500 p-4">
+            <TouchableOpacity 
+              className="mb-4 rounded-lg bg-blue-500 p-4"
+              onPress={() => setShowModalPin(true)} >
               <Text className="text-center font-semibold text-white">Change Your PIN</Text>
             </TouchableOpacity>
 
             {/* Use Biometrics Switch */}
-            <View className="flex-row items-center justify-between rounded-lg bg-white p-4">
+            <View className="mb-4 flex-row items-center justify-between rounded-lg bg-white p-4">
               <Text className="font-medium text-gray-800">Use Biometrics</Text>
               <Switch
                 value={useBiometrics}
@@ -153,6 +149,14 @@ const SettingsPage = () => {
               />
             </View>
 
+            {/* Delete Wallet Button */}
+            <TouchableOpacity
+              onPress={() => setShowModal(true)}
+              className="mb-4 rounded-lg bg-red-500 p-4">
+              <Text className="text-center font-semibold text-white">Delete Your Wallet</Text>
+            </TouchableOpacity>
+
+            {/* Delete wallet modal */}
             <Modal
               isOpen={showModal}
               onClose={() => {
@@ -201,8 +205,9 @@ const SettingsPage = () => {
               </ModalContent>
             </Modal>
 
+            {/* Ask for current PIN */}
             <Modal
-              isOpen={showModal}
+              isOpen={showModalPin}
               onClose={() => {
                 setShowModalPin(false)
               }}
@@ -215,13 +220,18 @@ const SettingsPage = () => {
                 </ModalHeader>
                 <ModalBody className="mb-4">
                   <Input>
-                    <InputField placeholder="Enter your current pin" />
+                    <InputField
+                      value={pin}
+                      placeholder="Enter your current pin"
+                      secureTextEntry
+                      onChangeText={setPin}
+                    />
                   </Input>
                 </ModalBody>
                 <ModalFooter className="flex-col items-start">
                   <Button
                     onPress={() => {
-                      setShowModalNewPin(true)
+                      checkPin                      
                     }}
                     className="w-full"
                   >
@@ -236,12 +246,13 @@ const SettingsPage = () => {
                     className="gap-1"
                   >
                     <ButtonIcon as={ArrowLeftIcon} />
-                    <ButtonText>Back to login</ButtonText>
+                    <ButtonText>Go back</ButtonText>
                   </Button>
                 </ModalFooter>
               </ModalContent>
             </Modal>
 
+            {/* Ask for new PIN */}
             <Modal
               isOpen={showModalNewPin}
               onClose={() => {
@@ -253,7 +264,7 @@ const SettingsPage = () => {
                 <ModalHeader className="flex-col items-start gap-0.5">
                   <Heading>Set new Pin</Heading>
                   <Text size="sm">
-                    Almost done. Don't forget to also write it down somewhere safe.
+                    Almost done. Don't forget to also write this new pin down somewhere safe.
                   </Text>
                 </ModalHeader>
                 <ModalBody className="" contentContainerClassName="gap-3">
@@ -268,8 +279,8 @@ const SettingsPage = () => {
                   <Button
                     onPress={() => {
                       changePin
-                      setShowModalPin(false)
                       setShowModalNewPin(false)
+                      setShowModalFinish(true)
                     }}
                     className="w-full"
                   >
@@ -284,14 +295,15 @@ const SettingsPage = () => {
                     className="gap-1"
                   >
                     <ButtonIcon as={ArrowLeftIcon} />
-                    <ButtonText>Back to login</ButtonText>
+                    <ButtonText>Go back</ButtonText>
                   </Button>
                 </ModalFooter>
               </ModalContent>
             </Modal>
 
+            {/* Confirmation Pin changed */}
             <Modal
-              isOpen={showModalNewPin}
+              isOpen={showModalFinish}
               onClose={() => {
                 setShowModalFinish(false)
               }}
@@ -310,28 +322,27 @@ const SettingsPage = () => {
                 <ModalFooter className="flex-col items-start">
                   <Button
                     onPress={() => {
-                      setShowModalPin(false)
-                      setShowModalNewPin(false)
                       setShowModalFinish(false)
                     }}
                     className="w-full"
                   >
-                    <ButtonText>Submit</ButtonText>
+                    <ButtonText>Done!</ButtonText>
                   </Button>
                   <Button
                     variant="link"
                     size="sm"
                     onPress={() => {
-                      setShowModalPin(false)
+                      setShowModalFinish(false)
                     }}
                     className="gap-1"
                   >
                     <ButtonIcon as={ArrowLeftIcon} />
-                    <ButtonText>Back to login</ButtonText>
+                    <ButtonText>Go back</ButtonText>
                   </Button>
                 </ModalFooter>
               </ModalContent>
             </Modal>
+
           </View>
         </Container>
       </ScrollView>
