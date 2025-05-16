@@ -288,7 +288,8 @@ const WalletGenerator = () => {
             </Box>
           )}
 
-          {/* Custom Modal */}
+          
+          {/* Custom Modal */}                              
           <Modal
             animationType="slide"
             transparent={true}
