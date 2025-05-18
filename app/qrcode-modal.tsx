@@ -29,7 +29,7 @@ export default function QRCodeModal() {
     setScanned(true);
     setScannedData(data);
     // Navigate to the transaction screen with the scanned address
-    router.push({ pathname: '/(drawer)/(tabs)/transaction', params: { address: data } });
+    router.push({ pathname: '/(drawer)/(tabs)/two', params: { address: data } });
   };
 
   function toggleCameraFacing() {

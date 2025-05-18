@@ -2,7 +2,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { forwardRef } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 
-export const HeaderButton = forwardRef<typeof Pressable, { onPress?: () => void }>(
+export const QRCodeButton = forwardRef<typeof Pressable, { onPress?: () => void }>(
   ({ onPress }, ref) => {
     return (
       <Pressable onPress={onPress}>

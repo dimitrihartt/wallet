@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Stack } from 'expo-router';
 import { ScrollView, View, TouchableOpacity, Switch } from 'react-native';
-import { Container } from '~/components/Container';
 import * as SecureStore from 'expo-secure-store';
 import * as Application from 'expo-application';
 
@@ -24,7 +23,7 @@ import { Link, LinkText } from "~/components/ui/link"
 import { ArrowLeftIcon } from "@/components/ui/icon"
 
 
-const SettingsPage = () => {
+const SettingsModal = () => {
   const [useBiometrics, setUseBiometrics] = useState(false);
 
   const [showModal, setShowModal] = React.useState(false)
@@ -126,8 +125,7 @@ const SettingsPage = () => {
   return (
     <>
       <Stack.Screen options={{ title: 'Settings' }} />
-      <ScrollView contentContainerClassName="h-full bg-white dark:bg-gray-900">
-        <Container>
+      <ScrollView contentContainerClassName="h-full bg-white dark:bg-gray-900">        
           <View className="flex-1 bg-gray-100 p-4">
             <Text className="mb-6 text-2xl font-bold text-gray-800">Settings</Text>
 
@@ -342,12 +340,10 @@ const SettingsPage = () => {
                 </ModalFooter>
               </ModalContent>
             </Modal>
-
-          </View>
-        </Container>
+          </View>        
       </ScrollView>
     </>
   );
 };
 
-export default SettingsPage;
+export default SettingsModal;

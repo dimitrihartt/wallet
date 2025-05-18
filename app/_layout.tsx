@@ -2,7 +2,6 @@ import '../global.css';
 
 import '@/global.css';
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
-
 import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
@@ -19,15 +18,16 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
-  return (
-    <GluestackUIProvider mode="light">
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />
-        <Stack>
-          <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
-          <Stack.Screen name="qrcode-modal" options={{ title: 'QRCode', presentation: 'modal' }} />
-        </Stack>         
-      </GestureHandlerRootView>
-    </GluestackUIProvider>
+  return (    
+      <GluestackUIProvider mode="light">
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />
+          <Stack>
+            <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
+            <Stack.Screen name="qrcode-modal" options={{ title: 'QRCode', presentation: 'modal' }} />
+            <Stack.Screen name="settings-modal" options={{ title: 'Settings', presentation: 'modal' }} />
+          </Stack>
+        </GestureHandlerRootView>
+      </GluestackUIProvider>    
   );
 }
